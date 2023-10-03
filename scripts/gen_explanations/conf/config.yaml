@@ -1,0 +1,23 @@
+input:
+  prompt: "
+  Given a message:
+  1) Label if it is hateful or non-hateful. LABELS = 
+  2) Label the target of hate. TARGETS = 
+  3) Generate an explanation of why the sentence is hateful or not.
+  Output the answer in the following structure.
+  Label:
+  Target:
+  Explanation:
+  "
+  checkpoint_batch_size: 100
+  pretrained_model_name_or_path: t5-small
+  train_file: null
+  test_file: ???
+  dev_file: null
+  train_size: null
+  uri_path: null
+  run_name: ???
+  experiment_name: RQ1
+  experiment_description: "**RQ1:** Is the LLM X {GPT3, GPT4, Alpaca, T5, GPT-J,
+  Dream-Flute} faithful for generating explanations on hate speech? Are the
+  explanations sensitive to input sensitivity and perturbations?."
