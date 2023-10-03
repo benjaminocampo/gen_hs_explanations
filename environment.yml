@@ -1,0 +1,16 @@
+name: gen_hs_explanations
+channels:
+  - conda-forge
+dependencies:
+  - python=3.8  # You can choose other versions as well
+  - pandas
+  - pytorch
+  - torchvision
+  - cudatoolkit=11.1  # Match this with your CUDA version if you are using a GPU
+  - pip
+  - pip:
+      - transformers
+      - hydra-core
+      - mlflow
+      - sentencepiece
+      - e .
