@@ -1,6 +1,5 @@
 input:
-  prompt: "
-  Given a message:
+  prompt: "Given a message:
   1) Label if it is hateful or non-hateful. LABELS = 
   2) Label the target of hate. TARGETS = 
   3) Generate an explanation of why the sentence is hateful or not.
@@ -9,8 +8,11 @@ input:
   Target:
   Explanation:
   "
+  #prompt: "Determine if the following message is hateful and if so, identify the target group and explain why: "
+  #prompt: "Explain if the following message is hateful or not: "
+#  prompt: "paraphrase: Can you explain this hateful message? context: "
   checkpoint_batch_size: 100
-  pretrained_model_name_or_path: t5-small
+  pretrained_model_name_or_path: EleutherAI/gpt-neox-20b #t5-base
   train_file: null
   test_file: ???
   dev_file: null

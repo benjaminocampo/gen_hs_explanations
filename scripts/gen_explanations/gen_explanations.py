@@ -2,7 +2,7 @@ from cgi import test
 from omegaconf import DictConfig, OmegaConf
 from tempfile import TemporaryDirectory
 from pathlib import Path
-from transformers import T5Tokenizer, T5ForConditionalGeneration
+from transformers import T5Tokenizer, T5ForConditionalGeneration, GPTNeoXForCausalLM, GPTNeoXTokenizerFast
 from src.preprocessing import flatten_dict
 from tqdm import tqdm
 import hydra
@@ -35,11 +35,15 @@ def run_experiment(cfg: DictConfig, run: mlflow.ActiveRun):
         labels = test_df["label_gold"].str.upper().unique()
 
         # Initialize the T5 model and tokenizer
-        model = T5ForConditionalGeneration.from_pretrained(cfg.input.pretrained_model_name_or_path).to(device)
-        tokenizer = T5Tokenizer.from_pretrained(cfg.input.pretrained_model_name_or_path)
+        #model = T5ForConditionalGeneration.from_pretrained(cfg.input.pretrained_model_name_or_path).to(device)
+        #tokenizer = T5Tokenizer.from_pretrained(cfg.input.pretrained_model_name_or_path)
+
+        model = GPTNeoXForCausalLM.from_pretrained(cfg.input.pretrained_model_name_or_path).to(device)
+        tokenizer = GPTNeoXTokenizerFast.from_pretrained(cfg.input.pretrained_model_name_or_path)
 
         # Replace the placeholders in the original prompt with the list contents:
         prompt = cfg.input.prompt.replace('LABELS = ', f'LABELS = {str(labels)}').replace('TARGETS = ', f'TARGETS = {str(all_targets)}')
+        #prompt = cfg.input.prompt
 
         # Initialize an empty list to store explanations
         explanations = []
@@ -52,14 +56,15 @@ def run_experiment(cfg: DictConfig, run: mlflow.ActiveRun):
         # Loop through each message in the 'test_case' column
         for idx, hateful_message in tqdm(enumerate(test_df['text']), total=len(test_df)):
             # Combine the prompt and the hateful message
-            input_text = prompt + "\n" + hateful_message
+            input_text = prompt + hateful_message
+            #input_text = f"explain: {hateful_message}"
             
             # Encode the text into tensor of integers using the appropriate tokenizer
             input_ids = tokenizer(input_text, return_tensors="pt").input_ids.to(device)
             
             # Generate output from the model
             with torch.no_grad():
-                outputs = model.generate(input_ids,max_length=400, num_beams=5, temperature=0.5, early_stopping=True)
+                outputs = model.generate(input_ids, max_new_tokens=40, num_beams=5, temperature=0.8, do_sample=True, top_k=50, early_stopping=True)
                 
             # Decode and store the output text
             decoded_output = tokenizer.decode(outputs[0], skip_special_tokens=True)

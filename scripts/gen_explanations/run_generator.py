@@ -12,7 +12,7 @@ def main(run_on_cluster=False, pretrained_models=None, dataset_names=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--run_on_cluster", action="store_true")
 
-    pretrained_models = pretrained_models or ['t5-small']
+    pretrained_models = pretrained_models or ['EleutherAI/gpt-neox-20b']
     dataset_names = dataset_names or ['hatecheck']
 
     for pretrained_model, dataset_name in itertools.product(pretrained_models, dataset_names):
