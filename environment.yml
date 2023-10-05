@@ -13,4 +13,3 @@ dependencies:
       - hydra-core
       - mlflow
       - sentencepiece
-      - e .
