@@ -64,13 +64,19 @@ def run_experiment(cfg: DictConfig, run: mlflow.ActiveRun):
             
             # Generate output from the model
             with torch.no_grad():
-                outputs = model.generate(input_ids, max_new_tokens=40, num_beams=5, temperature=0.8, do_sample=True, top_k=50, early_stopping=True)
+                outputs = model.generate(
+                    input_ids,
+                    max_new_tokens=cfg.model.params.max_new_tokens,
+                    num_beams=cfg.model.params.num_beams,
+                    temperature=cfg.model.params.temperature,
+                    do_sample=cfg.model.params.do_sample,
+                    top_k=cfg.model.params.top_k,
+                    no_repeat_ngram_size=cfg.model.params.no_repeat_ngram_size
+                )
                 
             # Decode and store the output text
             decoded_output = tokenizer.decode(outputs[0], skip_special_tokens=True)
             explanations.append(decoded_output)
-
-            import pdb; pdb.set_trace()
             
             # Checkpoint: Save intermediate results after each batch
             if (idx + 1) % batch_size == 0:

@@ -1,15 +1,16 @@
 input:
-  prompt: "Given a message:
-  1) Label if it is hateful or non-hateful. LABELS = 
-  2) Label the target of hate. TARGETS = 
-  3) Generate an explanation of why the sentence is hateful or not.
-  Output the answer in the following structure.
-  Label:
-  Target:
-  Explanation:
-  "
+#  prompt: "Given a message:\n
+#  1) Label if it is hateful or non-hateful LABELS = .\n
+#  2) Label the target of hate TARGETS = .\n
+#  3) Generate an explanation of why the sentence is hateful or not.\n
+#  Output the answer in the following structure. \n
+#  Label: \n
+#  Target: \n
+#  Explanation: \n
+#  "
   #prompt: "Determine if the following message is hateful and if so, identify the target group and explain why: "
-  #prompt: "Explain if the following message is hateful or not: "
+#  prompt: "Explain if the following message is hateful or not: "
+  prompt: "In one sentence, explain if the following message is hateful: "
 #  prompt: "paraphrase: Can you explain this hateful message? context: "
   checkpoint_batch_size: 100
   pretrained_model_name_or_path: EleutherAI/gpt-neox-20b #t5-base
@@ -23,3 +24,13 @@ input:
   experiment_description: "**RQ1:** Is the LLM X {GPT3, GPT4, Alpaca, T5, GPT-J,
   Dream-Flute} faithful for generating explanations on hate speech? Are the
   explanations sensitive to input sensitivity and perturbations?."
+
+model:
+  params:
+    max_new_tokens: 40
+    num_beams: 5
+    temperature: 0.2
+    do_sample: false
+    top_k: 50
+    no_repeat_ngram_size: 3
+    
