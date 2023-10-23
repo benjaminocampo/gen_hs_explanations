@@ -20,13 +20,20 @@ logging.basicConfig(level=logging.INFO,
 logger = logging.getLogger(__name__)
 
 
+def label_to_str(x):
+    if x:
+        return "hateful"
+    else:
+        return "non-hateful"
+
+
 def process_data(data, all_targets):
     inputs = []
     outputs = []
 
     for _, row in data.iterrows():
         input_str = f"Given a message: {row['text']} 1) Label if it is hateful or non-hateful. 2) Label the target of hate. TARGETS = {', '.join(all_targets).lower()} 3) Generate an explanation of why the sentence is hateful or not. Output the answer in the following structure. Label: Target: Explanation: "
-        output_str = f"Label: {row['label']} Target: {row['sanitized_target'].lower()} Explanation: The message is {row['label']} because it implies {row['implication']}."
+        output_str = f"Label: {label_to_str(row['label'])} Target: {row['sanitized_target'].lower()} Explanation: The message is {label_to_str(row['label'])} because it implies {row['implication']}."
 
         inputs.append(input_str)
         outputs.append(output_str)
@@ -83,8 +90,8 @@ def run_experiment(cfg: DictConfig, run: mlflow.ActiveRun):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # Load your dataset
-        train_df = pd.read_parquet(cfg.input.train_file)
-        dev_df = pd.read_parquet(cfg.input.dev_file)
+        train_df = pd.read_csv(cfg.input.train_file)
+        dev_df = pd.read_csv(cfg.input.dev_file)
 
         # TODO: this in the config file.
         TARGETS = [
