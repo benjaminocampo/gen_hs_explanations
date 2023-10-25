@@ -5,6 +5,7 @@ from transformers import T5Tokenizer, T5ForConditionalGeneration, DataCollatorFo
 from src.preprocessing import flatten_dict
 from datasets import Dataset, DatasetDict
 from evaluate import load
+from huggingface_hub import login
 import hydra
 import pandas as pd
 import torch
@@ -86,6 +87,8 @@ def run_experiment(cfg: DictConfig, run: mlflow.ActiveRun):
             f"Raw command-line arguments: {' '.join(map(shlex.quote, sys.argv))}"
         )
 
+        login(token=cfg.input.write_token)
+
         # Check if a GPU is available and if not, fall back to CPU
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -93,21 +96,15 @@ def run_experiment(cfg: DictConfig, run: mlflow.ActiveRun):
         train_df = pd.read_csv(cfg.input.train_file)
         dev_df = pd.read_csv(cfg.input.dev_file)
 
-        # TODO: this in the config file.
-        TARGETS = [
-            "BLACK PEOPLE", "WOMEN", "JEWS", "LGBTQ+", "MUSLIMS", "DISEASE",
-            "ASIAN", "IMMIGRANTS", "WHITE PEOPLE", "AFRICAN"
-        ]
-
-        train_df = train_df[train_df["sanitized_label"].isin(TARGETS)
+        # Filter all rows that contain the targets we are focusing on and have
+        # implied statement
+        train_df = train_df[train_df["sanitized_target"].isin(cfg.input.targets)
                             & ~train_df["implication"].isna()]
-        train_df = train_df.rename(
-            columns={"sanitized_label": "sanitized_target"})
-        dev_df = dev_df[dev_df["sanitized_target"].isin(TARGETS)
+        dev_df = dev_df[dev_df["sanitized_target"].isin(cfg.input.targets)
                         & ~dev_df["implication"].isna()]
 
-        train_inputs, train_outputs = process_data(train_df, TARGETS)
-        dev_inputs, dev_outputs = process_data(dev_df, TARGETS)
+        train_inputs, train_outputs = process_data(train_df, cfg.input.targets)
+        dev_inputs, dev_outputs = process_data(dev_df, cfg.input.targets)
 
         # Use the `load_dataset` function from Hugging Face to process these lists
         dataset = DatasetDict({
@@ -123,6 +120,7 @@ def run_experiment(cfg: DictConfig, run: mlflow.ActiveRun):
             }),
         })
 
+        # Load T5 and tokenizer model
         model = T5ForConditionalGeneration.from_pretrained(
             cfg.input.pretrained_model_name_or_path).to(device)
         tokenizer = T5Tokenizer.from_pretrained(cfg.input.pretrained_model_name_or_path)
@@ -134,11 +132,11 @@ def run_experiment(cfg: DictConfig, run: mlflow.ActiveRun):
             model_inputs = tokenizer(examples['input_text'],
                                      padding='max_length',
                                      truncation=True,
-                                     max_length=cfg.input.max_length)
+                                     max_length=cfg.model.params.max_length)
             labels = tokenizer(examples['target_text'],
                                padding='max_length',
                                truncation=True,
-                               max_length=cfg.input.max_label_length)
+                               max_length=cfg.model.params.max_label_length)
             model_inputs["labels"] = labels["input_ids"]
             return model_inputs
 

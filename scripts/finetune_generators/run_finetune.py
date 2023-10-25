@@ -49,7 +49,7 @@ def oar_submission_text_gpu(run_name, run_cmd):
     """
     return cleandoc(f"""
         oarsub -p "gpu='YES' and gpucapability>='5.0' and gpumem>=15000" \
-        -l /gpunum=1,nodes=1,walltime=1:00:00 \
+        -l /gpunum=1,nodes=1,walltime=12:00:00 \
         --stdout={run_name}.out \
         --stderr={run_name}.err \
         -q besteffort \
@@ -71,7 +71,7 @@ def main():
     for pretrained_model, dataset_name in itertools.product(pretrained_models, dataset_names):
         run_name = f'run_{pretrained_model}_{dataset_name}'
         run_name = run_name.replace("/", "_")
-        run_cmd = f"python gen_explanations.py ++input.pretrained_model_name_or_path={pretrained_model} ++input.train_file=../../data/{dataset_name}_train.csv ++input.dev_file=../../data{dataset_name}_dev.csv input.run_name={run_name}"
+        run_cmd = f"python finetune_seq2seq.py ++input.pretrained_model_name_or_path={pretrained_model} ++input.train_file=../../data/{dataset_name}_train.csv ++input.dev_file=../../data/{dataset_name}_dev.csv input.run_name={run_name}"
 
         # If the run-on-cluster flag is set, submit the task to the OAR scheduler
         if args.run_on_cluster:
