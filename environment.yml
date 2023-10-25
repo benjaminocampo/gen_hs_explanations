@@ -13,3 +13,8 @@ dependencies:
       - hydra-core
       - mlflow
       - sentencepiece
+      - datasets
+      - nltk
+      - evaluate
+      - rouge-score
+      - accelerate
