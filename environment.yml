@@ -20,3 +20,4 @@ dependencies:
     - bert-score
     - git+https://github.com/google-research/bleurt.git #bleurt-score
     - accelerate
+    - bleu
