@@ -45,17 +45,9 @@ def run_experiment(cfg: DictConfig, run: mlflow.ActiveRun):
 
         # Load your dataset
         train_df = pd.read_csv(cfg.input.train_file)
-        train_df = train_df[
-            train_df["sanitized_target"].isin(cfg.input.targets)
-            & ~train_df["implication"].isna()]
+        train_df = train_df[~train_df["implication"].isna()]
 
         test_df = pd.read_csv(cfg.input.test_file)
-
-        all_targets = test_df["target_ident"].str.upper().dropna().unique().tolist()
-        labels = test_df["label_gold"].str.upper().unique().tolist()
-
-        # Replace the placeholders in the original prompt with the list contents:
-        prompt = cfg.input.prompt_template.format(all_targets=str(all_targets).lower(), all_labels=str(labels).lower())
 
         # Initialize an empty list to store explanations
         inputs = []
@@ -72,7 +64,7 @@ def run_experiment(cfg: DictConfig, run: mlflow.ActiveRun):
             shots_text = "\n\n".join(shots)
 
             # Combine the prompt and the hateful message
-            input_text = prompt.format(message=hateful_message, shots=shots_text)
+            input_text = cfg.input.prompt_template.format(message=hateful_message, shots=shots_text)
 
             # Encode the text into tensor of integers using the appropriate tokenizer
             text = openai_client.completions.create(
