@@ -2,33 +2,30 @@ import argparse
 import pandas as pd
 import evaluate
 import numpy as np
-from sklearn.metrics import precision_recall_fscore_support, accuracy_score
+from sklearn.metrics import accuracy_score
 
 def calculate_metrics(data, functionality=None):
-    metrics = ["bertscore", "bleurt", "bleu"]
-    params = [{"model_type": "distilbert-base-uncased"}, {}, {"max_order": 1, "smooth": True}]
-    val_to_output = ["f1", "scores", "bleu"]
+    metrics = [("bertscore","bertscore"), ("bleurt", "bleurt"), ("bleu","bleu"), ("bleu", "bleu_IvsP")]
+    params = [{"model_type": "distilbert-base-uncased"}, {}, {"max_order": 1, "smooth": True}, {"max_order": 1, "smooth": True}]
+    val_to_output = ["f1", "scores", "bleu", "bleu"]
+    pred_ref = [("pred_exp", "gold_exp"), ("pred_exp", "gold_exp"), ("pred_exp", "gold_exp"), ("pred_exp", "text")]
     results = {}
-    for metric_name, ps, out in zip(metrics, params, val_to_output):
-        metric = evaluate.load(metric_name)
+    for (metric_to_load, metric_name), ps, out, (pred_col, ref_col) in zip(metrics, params, val_to_output, pred_ref):
+        metric = evaluate.load(metric_to_load)
         if functionality:
             grouped_data = data.groupby(functionality)
             scores_by_group = {}
             for name, group in grouped_data:
-                scores = metric.compute(predictions=group.reset_index()['pred_exps'], references=group.reset_index()['gold_exps'], **ps)
+                scores = metric.compute(predictions=group.reset_index()[pred_col], references=group.reset_index()[ref_col], **ps)
                 scores_by_group[name] = np.mean(scores[out])
             results[metric_name] = scores_by_group
         else:
-            scores = metric.compute(predictions=data['pred_exps'], references=data['gold_exps'], **ps)
+            scores = metric.compute(predictions=data[pred_col], references=data[ref_col], **ps)
             results[metric_name] = np.mean(scores[out])
+
     return results
 
-def get_classification_metrics(data, pred_column, gold_column):
-    precision, recall, f1, _ = precision_recall_fscore_support(data[gold_column], data[pred_column], average='micro', zero_division=0)
-    accuracy = accuracy_score(data[gold_column], data[pred_column])
-    return precision, recall, f1, accuracy
-
-def main(csv_file):
+def main(csv_pred, csv_gold, prefix_out_filename):
 
     func_num = {
         "counter_quote_nh": "F20",
@@ -56,12 +53,27 @@ def main(csv_file):
         "threat_dir_h": "F5",
         "threat_norm_h": "F6"
     }
-    data = pd.read_csv(csv_file)
+    data_gold = pd.read_csv(csv_gold)
+    data_pred = pd.read_csv(csv_pred)
+
+    data = pd.concat([data_gold, data_pred], axis=1)
+
     data["func_num"] = data["functionality"].replace(func_num)
 
-    data = data[~data["gold_exps"].isna()]
-    data["pred_labels"] = data["pred_labels"].replace({"hateful": 1, "non-hateful": 0})
-    data["gold_labels"] = data["gold_labels"].replace({"hateful": 1, "non-hateful": 0})
+    # We also are not considering func F22 to F29
+    data = data[
+        ~data["functionality"].apply(lambda t: t.startswith("spell_"))
+        & ~data["functionality"].apply(lambda t: t.startswith("counter_ref_"))
+        & ~data["functionality"].apply(lambda t: t.startswith("target_"))
+        ]
+
+    # We are removing null pred and exp values
+    data = data[~data["pred_label"].isna()]
+    data = data[~data["pred_exp"].isna()]
+
+    data["pred_label"] = data["pred_label"].apply(lambda t: t.lower())
+    data["pred_label"] = data["pred_label"].replace({"hateful": 1, "non-hateful": 0})
+    data["gold_label"] = data["gold_label"].replace({"hateful": 1, "non-hateful": 0})
 
     # DataFrame for overall results
     overall_results = {}
@@ -70,15 +82,13 @@ def main(csv_file):
     overall_results = calculate_metrics(data)
 
     # Classification metrics overall and store results
-    precision, recall, f1, accuracy = get_classification_metrics(data, 'pred_labels', 'gold_labels')
-    overall_results['precision'] = precision
-    overall_results['recall'] = recall
-    overall_results['f1'] = f1
+    accuracy = accuracy_score(data['pred_label'], data['gold_label'])
     overall_results['accuracy'] = accuracy
 
     overall_df = pd.DataFrame([overall_results])
     print("Overall Results:")
     print(overall_df)
+    overall_df.to_csv(f"{prefix_out_filename}_overall_results.csv", index=False)
 
     # DataFrame for results by functionality
     functionality_results = {}
@@ -92,10 +102,7 @@ def main(csv_file):
     # Classification metrics by functionality and store results
     grouped_data = data.groupby('functionality')
     for name, group in grouped_data:
-        precision, recall, f1, accuracy = get_classification_metrics(group, 'pred_labels', 'gold_labels')
-        functionality_results[name]['precision'] = precision
-        functionality_results[name]['recall'] = recall
-        functionality_results[name]['f1'] = f1
+        accuracy = accuracy_score(group['pred_label'], group['gold_label'])
         functionality_results[name]['accuracy'] = accuracy
 
     functionality_df = pd.DataFrame.from_dict(functionality_results, orient='index')
@@ -103,14 +110,16 @@ def main(csv_file):
 
     functionality_df["func_num"] = functionality_df["functionality"].replace(func_num)
     functionality_df["func_num_int"] = functionality_df["functionality"].replace({k: int(v.replace("F", "")) for k, v in func_num.items()})
-    functionality_df.to_csv(f"{csv_file}_results.csv")
     print("Results by Functionality:")
-    print(functionality_df.sort_values(by="func_num_int", ascending=False))
+    print(functionality_df.sort_values(by="func_num_int"))
+    functionality_df.to_csv(f"{prefix_out_filename}_func_results.csv", index=False)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Evaluate CSV file and create result DataFrames.')
-    parser.add_argument('--csv-file', type=str, help='Path to the CSV file')
+    parser.add_argument('--csv-pred', type=str, help='Path to the CSV file predictions')
+    parser.add_argument('--csv-gold', type=str, help='Path to the CSV file gold instances')
+    parser.add_argument('--prefix-out-filename', type=str, help='Prefix of output files')
 
     args = parser.parse_args()
 
-    main(args.csv_file)
+    main(args.csv_pred, args.csv_gold, args.prefix_out_filename)
