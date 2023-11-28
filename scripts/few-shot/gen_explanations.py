@@ -1,4 +1,3 @@
-from pyexpat import model
 from omegaconf import DictConfig, OmegaConf
 from tempfile import TemporaryDirectory
 from pathlib import Path
@@ -49,6 +48,8 @@ def run_experiment(cfg: DictConfig, run: mlflow.ActiveRun):
 
         test_df = pd.read_csv(cfg.input.test_file)
 
+        test_df = test_df[~test_df["gold_exp"].isna()]
+
         # Initialize an empty list to store explanations
         inputs = []
         explanations = []
@@ -59,7 +60,7 @@ def run_experiment(cfg: DictConfig, run: mlflow.ActiveRun):
         # Loop through each message in the 'test_case' column
         for idx, hateful_message in tqdm(enumerate(test_df['text']), total=len(test_df)):
 
-            shots = train_df.sample(n=cfg.input.nof_shots, random_state=cfg.input.shots_random_state)
+            shots = train_df.sample(n=cfg.input.nof_shots)
             shots = shots.apply(build_shot, axis=1).tolist()
             shots_text = "\n\n".join(shots)
 
@@ -83,12 +84,13 @@ def run_experiment(cfg: DictConfig, run: mlflow.ActiveRun):
             # Checkpoint: Save intermediate results after each batch
             if (idx + 1) % batch_size == 0:
                 test_df.loc[:idx, 'pred_exp'] = explanations[:idx + 1]
-                test_df.loc[:idx, 'input_exp'] = inputs[:idx + 1]
+                test_df.loc[:idx, 'input_text'] = inputs[:idx + 1]
                 test_df.to_csv(output_dir / f'hatecheck_with_explanations_checkpoint_{idx + 1}.csv', index=False)
                 print(f"Checkpoint saved for index {idx + 1}")
 
         # Add remaining explanations as a new column to the DataFrame
         test_df['pred_exp'] = explanations
+        test_df['input_text'] = inputs
 
         # Save the DataFrame to a new CSV file
         test_df.to_csv(output_dir / 'hatecheck_with_explanations_final.csv', index=False)
