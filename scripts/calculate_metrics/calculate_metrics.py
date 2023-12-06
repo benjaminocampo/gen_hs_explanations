@@ -54,27 +54,31 @@ def main(csv_pred, csv_gold, prefix_out_filename):
         "threat_norm_h": "F6"
     }
     data_gold = pd.read_csv(csv_gold)
+
     data_pred = pd.read_csv(csv_pred)
 
     data = pd.concat([data_gold, data_pred], axis=1)
 
+    data = data[~data["functionality"].isna()]
+    
+    data = data[~data["functionality"].apply(lambda t: t.startswith("spell_"))]
+
+    assert len(data) == 2968, "Wrong total number of instances in HC. Some instance is being filtered."
+
     data["func_num"] = data["functionality"].replace(func_num)
 
-    # We also are not considering func F22 to F29
-    data = data[
-        ~data["functionality"].apply(lambda t: t.startswith("spell_"))
-        & ~data["functionality"].apply(lambda t: t.startswith("counter_ref_"))
-        & ~data["functionality"].apply(lambda t: t.startswith("target_"))
-        ]
-
     # We are removing null pred and exp values
+
     data = data[~data["pred_label"].isna()]
     data = data[~data["pred_exp"].isna()]
+
+    print("Null values that we are not considering: ", 2968 - len(data))
 
     data["pred_label"] = data["pred_label"].apply(lambda t: t.lower())
     data["pred_label"] = data["pred_label"].replace({"hateful": 1, "non-hateful": 0})
     data["gold_label"] = data["gold_label"].replace({"hateful": 1, "non-hateful": 0})
 
+    import pdb; pdb.set_trace()
     # DataFrame for overall results
     overall_results = {}
 
