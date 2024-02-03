@@ -3,12 +3,9 @@ channels:
   - conda-forge
 dependencies:
   - python=3.8  # You can choose other versions as well
-  - pandas
-  - pytorch
-  - torchvision
-  - cudatoolkit=11.1  # Match this with your CUDA version if you are using a GPU
   - pip
   - pip:
+<<<<<<< HEAD
       - transformers
       - hydra-core
       - mlflow
@@ -19,3 +16,10 @@ dependencies:
       - rouge-score
       - accelerate
       - openai
+      - pandas
+      - torch
+      - torchvision
+      - bert-score
+      - git+https://github.com/google-research/bleurt.git #bleurt-score
+      - accelerate
+      - bleu
