@@ -1,0 +1,16 @@
+input:
+  openai_api_key: <your_openai_api_key>
+  train_file: "../../data/sbic_train.csv"
+  test_file: "../../data/hatecheck_test_gold_exp.csv"
+  prompt_template: "Given a message: {message}\n1) Label if it is hateful or non-hateful.\n2) Label the target of hate\n3) Generate an explanation of why the sentence is hateful or not.\n\nDemonstration Examples:\n{shots}\nOutput the answer in the following structure.\nLabel:\nTarget:\nExplanation:\n"
+  checkpoint_batch_size: 100
+  engine: "text-davinci-003"
+  max_token: 512
+  n: 1
+  stop: null
+  temperature: 0.5
+  uri_path: null
+  experiment_name: GPTModelsWithFewShot
+  experiment_description: "RQ: Can generation performance improve if we use few-shot?"
+  run_name: ??
+  nof_shots: 5
