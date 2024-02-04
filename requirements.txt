@@ -1,0 +1,21 @@
+# local package
+-e .
+
+# external requirements
+transformers
+hydra-core
+mlflow
+sentencepiece
+datasets
+nltk
+evaluate
+rouge-score
+accelerate
+openai
+pandas
+torch
+torchvision
+bert-score
+git+https://github.com/google-research/bleurt.git #bleurt-score
+accelerate
+bleu
