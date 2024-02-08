@@ -1,0 +1,14 @@
+defaults:
+  - _self_
+  - model: gpt-3.5
+  - prompt: with-exp
+  - dataset: hatecheck
+
+
+input:
+  uri_path: null
+  experiment_name: "with_vs_without_explanations"
+  experiment_description: "RQ1: Does jointly labeling and generating explanations for HS and Non-HS messages impact the classification results?"
+  run_name: ??
+  checkpoint_batch_size: 100
+  output_dir: "../../data/RQ1_generations"

@@ -1,0 +1,2 @@
+params:
+  template: "Given a message: {message}\n1) Label if it is hateful or non-hateful.\n2) Label the target of hate.\nOutput the answer in the following structure.\nLabel:\nTarget:\n"

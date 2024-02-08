@@ -1,0 +1,4 @@
+params:
+  template: "Given a message: {message}\n1) Label if it is hateful or non-hateful.\n2) Label the target of hate.\n\nDemonstration Examples:\n{shots}\n\nOutput the answer in the following structure.\nLabel:\nTarget:\n"
+  nof_shots: 5
+  fs_data_path: "../../data/sbic_fs_gold_exp.csv"

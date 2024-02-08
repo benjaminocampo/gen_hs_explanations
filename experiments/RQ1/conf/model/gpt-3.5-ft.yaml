@@ -1,0 +1,8 @@
+module: ${eval:GPTModel}
+name: gpt-3.5
+params:
+  engine: "gpt-3.5-turbo-0125"
+  max_tokens: 512
+  n: 1
+  stop: null
+  temperature: 0.5

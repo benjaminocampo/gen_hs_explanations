@@ -1,0 +1,8 @@
+module: ${eval:GPTModel}
+name: gpt-4
+params:
+  engine: "gpt-4-0613"
+  max_tokens: 512
+  n: 1
+  stop: null
+  temperature: 0.5
