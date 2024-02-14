@@ -22,3 +22,4 @@ bleu
 backoff
 python-dotenv
 mistralai
+tiktoken
