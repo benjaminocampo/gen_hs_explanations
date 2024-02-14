@@ -1,11 +1,12 @@
 from datasets import Dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments, Trainer, DataCollatorForLanguageModeling
-import torch
+from peft import LoraConfig, TaskType
+from peft import get_peft_model
 import torch
 import pandas as pd
 
-ihc_is_train = pd.read_csv("../../data/ihc_is_train.csv")
-ihc_is_dev = pd.read_csv("../../data/ihc_is_dev.csv")
+ihc_is_train = pd.read_csv("../data/ihc_is_train.csv")
+ihc_is_dev = pd.read_csv("../data/ihc_is_dev.csv")
 
 # GPU out of memory, we are trying with samples
 ihc_is_train = ihc_is_train.sample(50, random_state=0)
@@ -40,10 +41,20 @@ def tokenize_function(examples):
 tok_train = ihc_is_train_dataset.map(tokenize_function, batched=True, remove_columns=ihc_is_train_dataset.column_names)
 tok_dev = ihc_is_dev_dataset.map(tokenize_function, batched=True, remove_columns=ihc_is_train_dataset.column_names)
 
-
 model = AutoModelForCausalLM.from_pretrained('mistralai/Mistral-7B-v0.1')
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+if hasattr(model, "enable_input_require_grads"):
+    model.enable_input_require_grads()
+else:
+    def make_inputs_require_grad(module, input, output):
+         output.requires_grad_(True)
+
+    model.get_input_embeddings().register_forward_hook(make_inputs_require_grad)
+
+peft_config = LoraConfig(task_type=TaskType.CAUSAL_LM, inference_mode=False, r=8, lora_alpha=32, lora_dropout=0.1)
+
+model = get_peft_model(model, peft_config)
+model.print_trainable_parameters()
 
 # Assuming your model and tokenizer are already instantiated
 tokenizer.pad_token = tokenizer.eos_token  # Make sure the pad token is set
@@ -53,17 +64,20 @@ data_collator = DataCollatorForLanguageModeling(tokenizer, mlm=False)
 
 # Continue setting up your TrainingArguments as before
 training_args = TrainingArguments(
-    output_dir='./mistral-7B_ft_with_exp/results',
-    num_train_epochs=1,
-    per_device_train_batch_size=4,  # Adjust based on your GPU memory
-    per_device_eval_batch_size=4,
-    logging_dir='./mistral-7B_ft_with_exp/logs',
+    num_train_epochs=3,
+    per_device_train_batch_size=32,  # Adjust based on your GPU memory
+    per_device_eval_batch_size=32,
     logging_steps=50,
+    weight_decay=0.01,
     evaluation_strategy="epoch",
     save_strategy="epoch",
+    #optim="adafactor",
+    #gradient_accumulation_steps=4,
     load_best_model_at_end=True,
-    eval_accumulation_steps=16,
-    no_cuda=False,
+    #gradient_checkpointing=True,
+    #no_cuda=False,
+    output_dir='./mistral-7B_ft_with_exp/results',
+    logging_dir='./mistral-7B_ft_with_exp/logs',
 )
 
 # Update the Trainer to use the custom data collator
@@ -77,7 +91,5 @@ trainer = Trainer(
 
 trainer.train()
 
-trainer.push_to_hub(repo_id="BenjaminOcampo/mistral-7B_ft_with_exp",
-                    token="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",
-                    private=True)
+trainer.push_to_hub("BenjaminOcampo/mistral-7B_ft_with_exp")
 trainer.save_model("./mistral-7B_ft_with_exp")
