@@ -128,3 +128,6 @@ outputs/
 slurmerr/
 slurmout/
 bash_cmds/
+
+# Other
+.gitmessage.txt
