@@ -71,7 +71,7 @@ class GPTModel(Model):
 
         text = completions_with_backoff(
             model=self.engine,
-            messages=[{"role":"assistant", "content": input_text}],
+            messages=[{"role":"user", "content": input_text}],
             max_tokens=self.max_tokens,
             n=self.n,
             stop=self.stop,
@@ -115,5 +115,4 @@ class Mistral(Model):
             messages=[ChatMessage(role="user", content=input_text)],
         )
         text = chat_response.choices[0].message.content
-        # Placeholder for actual implementation
         return text
