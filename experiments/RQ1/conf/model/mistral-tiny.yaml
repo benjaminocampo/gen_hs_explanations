@@ -1,0 +1,6 @@
+module: ${eval:Mistral}
+name: mistral-tiny
+params:
+  engine: "mistral-tiny"
+  max_tokens: 512
+  temperature: 0.5
