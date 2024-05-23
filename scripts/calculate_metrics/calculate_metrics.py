@@ -5,10 +5,10 @@ import numpy as np
 from sklearn.metrics import accuracy_score
 
 def calculate_metrics(data, functionality=None):
-    metrics = [("bertscore","bertscore"), ("bleurt", "bleurt"), ("bleu","bleu"), ("bleu", "bleu_IvsP")]
-    params = [{"model_type": "distilbert-base-uncased"}, {}, {"max_order": 1, "smooth": True}, {"max_order": 1, "smooth": True}]
-    val_to_output = ["f1", "scores", "bleu", "bleu"]
-    pred_ref = [("pred_exp", "gold_exp"), ("pred_exp", "gold_exp"), ("pred_exp", "gold_exp"), ("pred_exp", "text")]
+    metrics = [("bertscore","bertscore"), ("bleu","bleu")]
+    params = [{"model_type": "distilbert-base-uncased"}, {"max_order": 1, "smooth": True}]
+    val_to_output = ["f1", "bleu"]
+    pred_ref = [("pred_exp", "gold_exp"), ("pred_exp", "gold_exp")]
     results = {}
     for (metric_to_load, metric_name), ps, out, (pred_col, ref_col) in zip(metrics, params, val_to_output, pred_ref):
         metric = evaluate.load(metric_to_load)
@@ -78,7 +78,6 @@ def main(csv_pred, csv_gold, prefix_out_filename):
     data["pred_label"] = data["pred_label"].replace({"hateful": 1, "non-hateful": 0})
     data["gold_label"] = data["gold_label"].replace({"hateful": 1, "non-hateful": 0})
 
-    import pdb; pdb.set_trace()
     # DataFrame for overall results
     overall_results = {}
 
